@@ -11,6 +11,7 @@ connectDb();
 //  Express js provide middleware json which is use for parse json data sent in the body of an incoming http request
 app.use(express.json());
 app.use("/api/contacts",require("./routes/contactRoutes"));
+app.use("/api/users",require("./routes/userRouter"));
 
 // whenever you have to use middleware you have use app.use()
 app.use(errorHandler);
