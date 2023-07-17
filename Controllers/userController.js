@@ -1,5 +1,6 @@
 const asyncHandler = require("express-async-handler");
 const bcrypt=require("bcrypt");
+const jwt=require("jsonwebtoken");
 const User=require("../models/userModel");
 
 // @desc Register a user
@@ -41,7 +42,33 @@ const register = asyncHandler(
 // @access public
 const login = asyncHandler(
     async (req,res)=>{
-        res.status(201).json(user);
+        const {email,password} = req.body;
+        if(!email||!password){
+            res.status(400);
+            throw new Error("All fields are mandatory!");
+        }
+        const userAvailable=await User.findOne({email});
+        if(!userAvailable){
+            res.status(400);
+            throw new Error("Please register first!");
+        }
+        // compare password with hashedpassword
+        const isMatch=await bcrypt.compare(password,userAvailable.password);
+        if(userAvailable && isMatch){
+            const acessToken=jwt.sign({
+                user:{
+                    username:userAvailable.username,
+                    email:userAvailable.email,
+                    id:userAvailable.id
+                }
+            },process.env.ACCESS_TOKEN_SECERT,
+            {expiresIn:"15m"}
+            );
+            res.status(200).json({acessToken});
+        }else{
+            res.status(401);
+            throw new Error('Invalid credentials!');
+        }
     }
 )
 
@@ -50,7 +77,7 @@ const login = asyncHandler(
 // @access private - Authenticated users only
 const currentUser=asyncHandler(
     async (req,res)=>{
-        res.json({message:"Current user information"});
+        res.json(req.user);
     }
 )
 
